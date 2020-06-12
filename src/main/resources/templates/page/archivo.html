@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Subir archivo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+	<script>
+	 $(document).ready(function() {
+		$(document).on("click", "#btn-subir-archivos", function(e) {
+		    e.preventDefault();
+		    if(document.getElementById("archivos").files.length <= 0) alert("Agregue un archivo");
+		    else{
+		    	$('#modalLoad').modal('show');
+			    var formData = new FormData();
+			    for(var i in document.getElementById("archivos").files) formData.append('archivos', document.getElementById("archivos").files[i]);
+			    
+			    $.ajax({
+			        url: 'http://localhost:4140/',  
+			        type: 'POST',
+			        contentType: false,
+			        data: formData,
+			        crossOrigin: true,
+			        success: function(data){ 
+			        	console.log("data", data);
+			        	var msj = "Archivos subidos:\n";
+			        	if(data.archivos.length > 0) {
+				        	$("#msjRespuesta").text("Se subieron " + data.archivos.length + " archivos.");
+				        	$('#modalLoad').modal('hide');
+				        	$('#modalConfirmacion').modal('show');
+				        	//location.reload();
+				        	/*for(var i=0; i < data.archivos.length; i++) msj += (i+1)+". El archivo " + data.archivos[i].name + "\n";
+				        	console.log("msj", msj);*/
+				        	
+			        	}
+			        	else {$('#modalLoad').modal('hide'); $('#modalConfirmacion').modal('show');}
+			        }, 
+			        error: function(jqXHR, exception, aaa) {
+			        	console.log("error", jqXHR);
+			        	$('#modalLoad').modal('hide');
+			        	alert("Ocurrio un error");
+			        },
+			        cache: false,
+			        processData: false
+			    });
+		    }
+		   
+		});
+
+		$(document).on("click", ".btn-eliminar-archivo", function(e) {
+			e.preventDefault();
+			var id = $(this).attr("key");
+			if(id.length > 0){
+				$('#nmodalPregunta').modal('hide');
+				$('#modalLoad').modal('show');
+				$.ajax({
+			        url: 'http://localhost:4140/'+id,  
+			        type: 'DELETE',
+			        contentType: false,
+			        crossOrigin: true,
+			        success: function(data){ 
+			        	if(data.status) {
+				        	//alert(data.message);
+				        	$("#msjRespuesta").text(data.message);
+				        	$('#modalLoad').modal('hide');
+				        	$('#modalConfirmacion').modal('show');
+				        	//location.reload();
+			        	}
+			        	else alert("No se logro subir los archivos");
+			        	
+			        }, 
+			        error: function(jqXHR, exception, aaa) {
+			        	console.log("error", jqXHR);
+			        	$('#modalLoad').modal('hide');
+			        	alert("Ocurrio un error");
+			        },
+			        cache: false,
+			        processData: false
+			    });
+			}
+			else alert("Ingrese un ID valido");
+			
+		});
+		
+		$(document).on("click", ".btn-finalizar", function(e) {
+			location.reload();
+		});
+		
+		$(document).on("click", ".btn-eliminar-pregunta", function(e) {
+			$(".btn-eliminar-archivo").attr("key", $(this).attr("id"));
+			$('#nmodalPregunta').modal('show');
+		});
+
+
+		$(document).on("click", ".btn-descargar", function(e) {
+			e.preventDefault();
+			//console.log("id  " + $(this).attr("id"));
+			var id = $(this).attr("id");
+			if(id.length > 0){
+				$('#modalLoad').modal('show');
+				$.ajax({
+			        url: 'http://localhost:4140/descargar/'+id,  
+			        type: 'GET',
+			        contentType: false,
+			        crossOrigin: true,
+			        success: function(data){ 
+			        	if(data.status) {
+				        	//alert(data.message);
+				        	$("#msjRespuesta").text(data.message);
+				        	$('#modalLoad').modal('hide');
+				        	$('#modalConfirmacion').modal('show');
+				        	//location.reload();
+			        	}
+			        	else alert("No se logro subir los archivos");
+			        	
+			        }, 
+			        error: function(jqXHR, exception, aaa) {
+			        	console.log("error", jqXHR);
+			        	$('#modalLoad').modal('hide');
+			        	alert("Ocurrio un error");
+			        },
+			        cache: false,
+			        processData: false
+			    });
+			}
+			else alert("Ingrese un ID valido");
+			
+		});
+		
+		 
+	});
+	</script>
+</head>
+<body>
+
+	<div class="container mt-4">
+	    <h2 class="display-4">Buckets</h2>
+	    <hr class="bg-info">
+	    <div class="col-6">
+	    
+	        <div class="input-group">
+	            
+	            <div class="custom-file">
+	                <input type="file" name="archivos" id="archivos"  class="form-control" multiple="" accept="application/pdf,image/jpeg">
+	            </div>
+	            <div class="input-group-prepend">
+	                <button class="input-group-text" id="btn-subir-archivos">Subir</button>
+	            </div>
+	            
+	        </div>
+	    </div>
+
+	    <div>
+	    	<div class="col-md-12 mb-40" th:if="${ objeto != null && !objeto.isEmpty() }">
+			    <table class="table mt-4">
+			        <thead class="thead-dark">
+			        <tr>
+			            <th scope="col">Id</th>
+			            <th scope="col">Archivo</th>
+			            <th scope="col">Action</th>
+			        </tr>
+			        </thead>
+			        <tbody>
+							
+						<tr th:each="archivo, i : ${objeto}">
+						    <th scope="row" th:text="${(i.index) +1}"></th>
+						    <td th:text="${archivo}"></td>
+						    <td class="d-flex">
+						    	<a class="btn btn-success ml-1 btn-sm text-white btn-descargar " th:id="${archivo}"><i class="fa fa-download"  aria-hidden="true"></i></a>
+						        <a class="btn btn-danger ml-1 btn-sm text-white btn-eliminar-pregunta" th:id="${archivo}"><i class="far fa-trash-alt"></i></a>
+						    </td>
+						</tr>
+						
+			        </tbody>
+			    </table>
+			</div>
+			<div class="col-md-12 mb-40" th:unless="${ objeto != null && !objeto.isEmpty() }">
+			<br/>
+				<h1 class="text-center">No se encontro en el resultado</h1>
+				<p class="text-center">Por favor suba un archivo</p>
+			</div>
+	    </div>
+	</div>
+
+	<div class="modal fade" id="modalLoad" tabindex="-1" role="dialog" aria-hidden="true" data-dismiss="modal"  data-keyboard="false" data-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div style="font-size: 1.2rem;" class="text-center">Cargando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="nmodalPregunta" tabindex="-1" role="dialog" aria-hidden="true" data-dismiss="modal"  data-keyboard="false" data-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div style="font-size: 1.2rem;" class="text-center">¿Seguro que desea eliminar el archivo?</div>
+                    <br/>
+                    <div class="text-center"> 
+                    	<button type="button" class="btn btn-primary btn-eliminar-archivo">ELIMINAR</button>  
+                    	<button type="button" class="btn btn-secondary" data-dismiss="modal">CANCELAR</button> 
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div style="font-size: 1.2rem;" class="text-center" id="msjRespuesta"></div>
+                    <br/>
+                    <div class="text-center"> <button type="button" class="btn btn-primary btn-finalizar">ACEPTAR</button> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="https://kit.fontawesome.com/79d91303eb.js" crossorigin="anonymous"></script>
+</body>
+</html>
